@@ -16,40 +16,43 @@
     <meta property="og:type" content="website" />
   </head>
   <body class="bg-slate-900 text-slate-100 antialiased">
-    <div id="root"></div>
-
-    <!-- SEO & 用户产品介绍区域（渲染在 React 根节点下方） -->
-    <section class="max-w-7xl mx-auto px-6 py-12 border-t border-slate-800 text-slate-400 font-sans">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-        <div class="bg-slate-950/40 p-6 rounded-xl border border-slate-800">
-          <h3 class="text-white text-base font-semibold mb-2 flex items-center gap-2">
+    <!-- 1. 顶部三要素卡片 (位于输入框上方) -->
+    <div class="max-w-7xl mx-auto px-6 pt-6 font-sans">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-slate-950/40 p-5 rounded-xl border border-slate-800">
+          <h3 class="text-white text-sm font-semibold mb-2 flex items-center gap-2">
             🛡️ 100% Client-Side Privacy
           </h3>
-          <p class="text-sm leading-relaxed">
+          <p class="text-xs text-slate-400 leading-relaxed">
             All processing happens directly inside your browser's V8 engine. Your raw data, sensitive API payloads, and PII are never sent to any external backend or third-party server.
           </p>
         </div>
 
-        <div class="bg-slate-950/40 p-6 rounded-xl border border-slate-800">
-          <h3 class="text-white text-base font-semibold mb-2 flex items-center gap-2">
+        <div class="bg-slate-950/40 p-5 rounded-xl border border-slate-800">
+          <h3 class="text-white text-sm font-semibold mb-2 flex items-center gap-2">
             ⚡ Automated PII Masking
           </h3>
-          <p class="text-sm leading-relaxed">
+          <p class="text-xs text-slate-400 leading-relaxed">
             Instantly redact personally identifiable information (PII) including Chinese names, emails, phone numbers, and credit card credentials before sharing logs or feeding data to LLMs.
           </p>
         </div>
 
-        <div class="bg-slate-950/40 p-6 rounded-xl border border-slate-800">
-          <h3 class="text-white text-base font-semibold mb-2 flex items-center gap-2">
+        <div class="bg-slate-950/40 p-5 rounded-xl border border-slate-800">
+          <h3 class="text-white text-sm font-semibold mb-2 flex items-center gap-2">
             🔄 Multi-Format Utility
           </h3>
-          <p class="text-sm leading-relaxed">
+          <p class="text-xs text-slate-400 leading-relaxed">
             Seamlessly beautify complex JSON objects, inspect interactive syntax trees, and export structured arrays into clean CSV spreadsheets with a single click.
           </p>
         </div>
       </div>
+    </div>
 
-      <!-- FAQ 常见问题 -->
+    <!-- 2. React 主入口 (工具主体输入输出框) -->
+    <div id="root"></div>
+
+    <!-- 3. 底部 FAQ 区域 -->
+    <section class="max-w-7xl mx-auto px-6 py-12 border-t border-slate-800 text-slate-400 font-sans">
       <div class="max-w-3xl mx-auto">
         <h2 class="text-xl font-bold text-white mb-6 text-center">Frequently Asked Questions</h2>
         <div class="space-y-4 text-sm">
