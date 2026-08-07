@@ -4,7 +4,7 @@ import {
   ShieldCheck, Check, Sparkles, ChevronDown, ChevronRight, Download
 } from 'lucide-react';
 
-// --- 辅助功能：JSON 树状展开组件 ---
+// --- Sub-component: JSON Tree View ---
 const JsonTreeNode = ({ data, keyName, isLast = true }) => {
   const [isOpen, setIsOpen] = useState(true);
   const isObject = data !== null && typeof data === 'object';
@@ -80,20 +80,25 @@ export default function VaultDataStudio() {
   const [viewMode, setViewMode] = useState('code'); // 'code' | 'tree'
   const [errorMsg, setErrorMsg] = useState(null);
 
-  // --- 示例数据 ---
+  // --- Sample JSON Data tailored for US/EU Standard PII ---
   const sampleJson = JSON.stringify({
-    user_id: 10293,
-    profile: {
-      full_name: "张伟",
-      email: "alex.mercer@company.io",
-      phone: "+86-13812345678",
-      credit_card: "4532-7182-9901-3411"
+    session_id: "sess_99823a41b",
+    user_profile: {
+      full_name: "Sarah Connor",
+      email: "s.connor@cyberdyne.io",
+      phone: "+1 (555) 019-2834",
+      ssn: "123-45-6789",
+      ip_address: "192.168.1.105"
     },
-    roles: ["admin", "developer"],
-    active: true
+    billing: {
+      credit_card: "4532-7182-9901-3411",
+      billing_address: "100 Wilshire Blvd, Los Angeles, CA"
+    },
+    permissions: ["admin", "auditor"],
+    is_active: true
   }, null, 2);
 
-  // --- 功能 1: JSON 格式化与解析 ---
+  // --- Feature 1: JSON Formatting ---
   const formattedJson = useMemo(() => {
     if (!inputData.trim()) {
       setErrorMsg(null);
@@ -116,7 +121,7 @@ export default function VaultDataStudio() {
     return null;
   }, [inputData, formattedJson, activeTab]);
 
-  // --- 功能 2: JSON 转 CSV 逻辑 ---
+  // --- Feature 2: JSON to CSV Conversion ---
   const csvResult = useMemo(() => {
     if (activeTab !== 'converter' || !inputData.trim()) return '';
     try {
@@ -146,49 +151,59 @@ export default function VaultDataStudio() {
     }
   }, [inputData, activeTab]);
 
-  // --- 功能 3: PII 数据自动脱敏逻辑 ---
+  // --- Feature 3: Western PII Redaction Logic ---
   const maskedResult = useMemo(() => {
     if (activeTab !== 'masker' || !inputData) return '';
-    
-    const emailRegex = /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
-    const phoneRegex = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
-    const creditCardRegex = /\b(?:\d[ -]*?){13,16}\b/g;
 
     let result = inputData;
 
-    // 1. 中文姓名脱敏（张伟 -> 张*伟，张三伟 -> 张*伟）
-    result = result.replace(/"(full_name|name|userName|realName)"\s*:\s*"([\u4e00-\u9fa5]{2,4})"/g, (match, field, name) => {
-      let maskedName = name;
-      if (name.length === 2) {
-        maskedName = name[0] + '*' + name[1];
-      } else if (name.length >= 3) {
-        maskedName = name[0] + '*'.repeat(name.length - 2) + name[name.length - 1];
-      }
+    // 1. English Full Names ("full_name", "name", "author" etc. -> "Sarah Connor" -> "S**** C*****")
+    result = result.replace(/"(full_name|name|userName|realName|author|owner)"\s*:\s*"([A-Za-z]+(?:\s+[A-Za-z]+)+)"/g, (match, field, name) => {
+      const maskedName = name
+        .split(' ')
+        .map(part => part[0] + '*'.repeat(Math.max(1, part.length - 1)))
+        .join(' ');
       return `"${field}": "${maskedName}"`;
     });
 
-    // 2. 邮箱脱敏
+    // 2. Email Addresses ("s.connor@cyberdyne.io" -> "s***r@cyberdyne.io")
+    const emailRegex = /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
     result = result.replace(emailRegex, (match, p1, p2) => {
       const maskedUser = p1.length > 2 ? p1.slice(0, 1) + '***' + p1.slice(-1) : '***';
       return `${maskedUser}@${p2}`;
     });
 
-    // 3. 手机号脱敏
+    // 3. US Social Security Numbers (SSN: 123-45-6789 -> ***-**-6789)
+    const ssnRegex = /\b\d{3}-\d{2}-\d{4}\b/g;
+    result = result.replace(ssnRegex, (match) => {
+      return '***-**-' + match.slice(-4);
+    });
+
+    // 4. Phone Numbers (US/EU Formats: +1 (555) 019-2834 -> +1 (555) ***-2834)
+    const phoneRegex = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
     result = result.replace(phoneRegex, (match) => {
       return match.slice(0, -4).replace(/\d/g, '*') + match.slice(-4);
     });
 
-    // 4. 信用卡脱敏
+    // 5. Credit Cards (PCI-DSS Standard: Keep last 4 digits)
+    const creditCardRegex = /\b(?:\d[ -]*?){13,16}\b/g;
     result = result.replace(creditCardRegex, (match) => {
       const clean = match.replace(/\D/g, '');
       if (clean.length < 13) return match;
-      return clean.slice(0, 4) + ' **** **** ' + clean.slice(-4);
+      return '**** **** **** ' + clean.slice(-4);
+    });
+
+    // 6. IP Addresses (192.168.1.105 -> 192.168.x.x)
+    const ipRegex = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
+    result = result.replace(ipRegex, (match) => {
+      const parts = match.split('.');
+      return `${parts[0]}.${parts[1]}.x.x`;
     });
 
     return result;
   }, [inputData, activeTab]);
 
-  // --- 操作句柄 ---
+  // --- Handlers ---
   const handleCopy = () => {
     let textToCopy = '';
     if (activeTab === 'beautifier') textToCopy = formattedJson || inputData;
@@ -221,7 +236,7 @@ export default function VaultDataStudio() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 font-sans antialiased flex flex-col">
-      {/* 顶部 Header */}
+      {/* Header */}
       <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-[#38bdf8]">
@@ -232,7 +247,6 @@ export default function VaultDataStudio() {
           </span>
         </div>
 
-        {/* 本地安全徽章 */}
         <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-medium">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -242,10 +256,10 @@ export default function VaultDataStudio() {
         </div>
       </header>
 
-      {/* 主体区域 */}
+      {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col gap-6">
         
-        {/* 工具栏与选项卡 */}
+        {/* Navigation & Action Bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
           <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-lg border border-slate-800">
             <button
@@ -280,7 +294,6 @@ export default function VaultDataStudio() {
             </button>
           </div>
 
-          {/* 全局操作组 */}
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
               onClick={() => setInputData(sampleJson)}
@@ -304,10 +317,10 @@ export default function VaultDataStudio() {
           </div>
         </div>
 
-        {/* 数据输入输出区 */}
+        {/* Workspace Panels */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-[500px]">
           
-          {/* 左侧：输入框 */}
+          {/* Input Panel */}
           <div className="flex flex-col bg-slate-950/40 rounded-xl border border-slate-800/80 overflow-hidden">
             <div className="bg-slate-900/60 px-4 py-2.5 border-b border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400">
               <span>INPUT DATA</span>
@@ -316,12 +329,12 @@ export default function VaultDataStudio() {
             <textarea
               value={inputData}
               onChange={(e) => setInputData(e.target.value)}
-              placeholder="Paste raw JSON or text here..."
+              placeholder="Paste raw JSON or string here..."
               className="flex-1 w-full bg-transparent p-4 font-mono text-sm text-slate-200 placeholder-slate-600 focus:outline-none resize-none leading-relaxed"
             />
           </div>
 
-          {/* 右侧：结果展示区 */}
+          {/* Output Panel */}
           <div className="flex flex-col bg-slate-950/40 rounded-xl border border-slate-800/80 overflow-hidden">
             <div className="bg-slate-900/60 px-4 py-2 border-b border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400">
               <span>OUTPUT PREVIEW</span>
@@ -386,7 +399,6 @@ export default function VaultDataStudio() {
         </div>
       </main>
 
-      {/* 页脚说明 */}
       <footer className="border-t border-slate-800/60 py-4 text-center text-xs text-slate-500">
         VaultData Studio • 100% Client-Side Processing • No Server Requests
       </footer>
