@@ -1,13 +1,75 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>vaultdata-studio</title>
+    
+    <!-- SEO 标题与描述优化 -->
+    <title>VaultData Studio - 100% Local JSON Formatter & Smart PII Masker</title>
+    <meta name="description" content="A privacy-first, 100% client-side developer tool to format JSON, convert JSON to CSV, and automatically mask PII (emails, phone numbers, credit cards, Chinese names). Zero server uploads." />
+    <meta name="keywords" content="JSON Formatter, PII Masker, Data Sanitizer, JSON to CSV, Privacy-first developer tools, Client-side JSON tool" />
+    
+    <!-- Open Graph (社交媒体分享卡片预览) -->
+    <meta property="og:title" content="VaultData Studio - Private JSON & PII Sanitizer" />
+    <meta property="og:description" content="Format JSON and mask sensitive data 100% locally in your browser. No data ever leaves your device." />
+    <meta property="og:type" content="website" />
   </head>
-  <body>
+  <body class="bg-slate-900 text-slate-100 antialiased">
     <div id="root"></div>
+
+    <!-- SEO & 用户产品介绍区域（渲染在 React 根节点下方） -->
+    <section class="max-w-7xl mx-auto px-6 py-12 border-t border-slate-800 text-slate-400 font-sans">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+        <div class="bg-slate-950/40 p-6 rounded-xl border border-slate-800">
+          <h3 class="text-white text-base font-semibold mb-2 flex items-center gap-2">
+            🛡️ 100% Client-Side Privacy
+          </h3>
+          <p class="text-sm leading-relaxed">
+            All processing happens directly inside your browser's V8 engine. Your raw data, sensitive API payloads, and PII are never sent to any external backend or third-party server.
+          </p>
+        </div>
+
+        <div class="bg-slate-950/40 p-6 rounded-xl border border-slate-800">
+          <h3 class="text-white text-base font-semibold mb-2 flex items-center gap-2">
+            ⚡ Automated PII Masking
+          </h3>
+          <p class="text-sm leading-relaxed">
+            Instantly redact personally identifiable information (PII) including Chinese names, emails, phone numbers, and credit card credentials before sharing logs or feeding data to LLMs.
+          </p>
+        </div>
+
+        <div class="bg-slate-950/40 p-6 rounded-xl border border-slate-800">
+          <h3 class="text-white text-base font-semibold mb-2 flex items-center gap-2">
+            🔄 Multi-Format Utility
+          </h3>
+          <p class="text-sm leading-relaxed">
+            Seamlessly beautify complex JSON objects, inspect interactive syntax trees, and export structured arrays into clean CSV spreadsheets with a single click.
+          </p>
+        </div>
+      </div>
+
+      <!-- FAQ 常见问题 -->
+      <div class="max-w-3xl mx-auto">
+        <h2 class="text-xl font-bold text-white mb-6 text-center">Frequently Asked Questions</h2>
+        <div class="space-y-4 text-sm">
+          <details class="bg-slate-950/40 p-4 rounded-lg border border-slate-800 cursor-pointer">
+            <summary class="font-medium text-slate-200">Is my data safe when using VaultData Studio?</summary>
+            <p class="mt-2 text-slate-400 leading-relaxed">
+              Yes, absolutely. VaultData Studio is built using a local-first architecture. Network requests are completely unnecessary for formatting or masking, ensuring zero data leakage risk.
+            </p>
+          </details>
+
+          <details class="bg-slate-950/40 p-4 rounded-lg border border-slate-800 cursor-pointer">
+            <summary class="font-medium text-slate-200">Why should I mask PII before using AI models?</summary>
+            <p class="mt-2 text-slate-400 leading-relaxed">
+              When feeding raw production logs or user records into AI prompts (like ChatGPT, Claude, or LLMs), customer emails, phone numbers, and real names can easily be logged or used for training. Sanitizing PII protects user privacy and maintains regulatory compliance (GDPR/CCPA).
+            </p>
+          </details>
+        </div>
+      </div>
+    </section>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
