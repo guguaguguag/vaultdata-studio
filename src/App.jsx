@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Lock, Copy, Trash2, FileText, ArrowRightLeft, 
-  ShieldCheck, Check, Sparkles, ChevronDown, ChevronRight, Download
+  ShieldCheck, Check, Sparkles, ChevronDown, ChevronRight, 
+  Download, Github, Coffee, UploadCloud, Shield, Cpu, RefreshCw
 } from 'lucide-react';
 
 // --- Sub-component: JSON Tree View ---
@@ -17,7 +18,7 @@ const JsonTreeNode = ({ data, keyName, isLast = true }) => {
     if (data === null) valueColor = 'text-rose-400';
 
     return (
-      <div className="pl-4 py-0.5 font-mono text-sm leading-relaxed hover:bg-slate-800/40 rounded">
+      <div className="pl-4 py-0.5 font-mono text-xs leading-relaxed hover:bg-slate-800/40 rounded transition-colors">
         {keyName && <span className="text-slate-400">"{keyName}": </span>}
         <span className={valueColor}>
           {typeof data === 'string' ? `"${data}"` : String(data)}
@@ -31,7 +32,7 @@ const JsonTreeNode = ({ data, keyName, isLast = true }) => {
   const isEmpty = keys.length === 0;
 
   return (
-    <div className="pl-4 py-0.5 font-mono text-sm leading-relaxed">
+    <div className="pl-4 py-0.5 font-mono text-xs leading-relaxed">
       <div 
         className="flex items-center gap-1 cursor-pointer select-none text-slate-300 hover:text-white"
         onClick={() => setIsOpen(!isOpen)}
@@ -44,14 +45,14 @@ const JsonTreeNode = ({ data, keyName, isLast = true }) => {
         {keyName && <span className="text-slate-400">"{keyName}": </span>}
         <span>{isArray ? '[' : '{'}</span>
         {!isOpen && (
-          <span className="text-slate-500 text-xs px-1">
-            ... {keys.length} items ... {isArray ? ']' : '}'}
+          <span className="text-slate-500 text-[10px] px-1 bg-slate-800/60 rounded border border-slate-700/50">
+            {keys.length} {keys.length === 1 ? 'item' : 'items'}
           </span>
         )}
       </div>
 
       {isOpen && !isEmpty && (
-        <div className="border-l border-slate-800 ml-2 pl-1">
+        <div className="border-l border-slate-800/80 ml-2 pl-1">
           {keys.map((k, index) => (
             <JsonTreeNode 
               key={k} 
@@ -74,13 +75,14 @@ const JsonTreeNode = ({ data, keyName, isLast = true }) => {
 };
 
 export default function VaultDataStudio() {
-  const [activeTab, setActiveTab] = useState('beautifier'); // 'beautifier' | 'converter' | 'masker'
+  const [activeTab, setActiveTab] = useState('beautifier');
   const [inputData, setInputData] = useState('');
   const [copied, setCopied] = useState(false);
-  const [viewMode, setViewMode] = useState('code'); // 'code' | 'tree'
+  const [viewMode, setViewMode] = useState('code');
   const [errorMsg, setErrorMsg] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  // --- Sample JSON Data tailored for US/EU Standard PII ---
+  // --- Sample JSON Data ---
   const sampleJson = JSON.stringify({
     session_id: "sess_99823a41b",
     user_profile: {
@@ -98,7 +100,7 @@ export default function VaultDataStudio() {
     is_active: true
   }, null, 2);
 
-  // --- Feature 1: JSON Formatting ---
+  // --- Logic Processing ---
   const formattedJson = useMemo(() => {
     if (!inputData.trim()) {
       setErrorMsg(null);
@@ -121,7 +123,6 @@ export default function VaultDataStudio() {
     return null;
   }, [inputData, formattedJson, activeTab]);
 
-  // --- Feature 2: JSON to CSV Conversion ---
   const csvResult = useMemo(() => {
     if (activeTab !== 'converter' || !inputData.trim()) return '';
     try {
@@ -151,13 +152,11 @@ export default function VaultDataStudio() {
     }
   }, [inputData, activeTab]);
 
-  // --- Feature 3: Western PII Redaction Logic ---
   const maskedResult = useMemo(() => {
     if (activeTab !== 'masker' || !inputData) return '';
 
     let result = inputData;
 
-    // 1. English Full Names ("full_name", "name", "author" etc. -> "Sarah Connor" -> "S**** C*****")
     result = result.replace(/"(full_name|name|userName|realName|author|owner)"\s*:\s*"([A-Za-z]+(?:\s+[A-Za-z]+)+)"/g, (match, field, name) => {
       const maskedName = name
         .split(' ')
@@ -166,26 +165,18 @@ export default function VaultDataStudio() {
       return `"${field}": "${maskedName}"`;
     });
 
-    // 2. Email Addresses ("s.connor@cyberdyne.io" -> "s***r@cyberdyne.io")
     const emailRegex = /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
     result = result.replace(emailRegex, (match, p1, p2) => {
       const maskedUser = p1.length > 2 ? p1.slice(0, 1) + '***' + p1.slice(-1) : '***';
       return `${maskedUser}@${p2}`;
     });
 
-    // 3. US Social Security Numbers (SSN: 123-45-6789 -> ***-**-6789)
     const ssnRegex = /\b\d{3}-\d{2}-\d{4}\b/g;
-    result = result.replace(ssnRegex, (match) => {
-      return '***-**-' + match.slice(-4);
-    });
+    result = result.replace(ssnRegex, (match) => '***-**-' + match.slice(-4));
 
-    // 4. Phone Numbers (US/EU Formats: +1 (555) 019-2834 -> +1 (555) ***-2834)
     const phoneRegex = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
-    result = result.replace(phoneRegex, (match) => {
-      return match.slice(0, -4).replace(/\d/g, '*') + match.slice(-4);
-    });
+    result = result.replace(phoneRegex, (match) => match.slice(0, -4).replace(/\d/g, '*') + match.slice(-4));
 
-    // 5. Credit Cards (PCI-DSS Standard: Keep last 4 digits)
     const creditCardRegex = /\b(?:\d[ -]*?){13,16}\b/g;
     result = result.replace(creditCardRegex, (match) => {
       const clean = match.replace(/\D/g, '');
@@ -193,7 +184,6 @@ export default function VaultDataStudio() {
       return '**** **** **** ' + clean.slice(-4);
     });
 
-    // 6. IP Addresses (192.168.1.105 -> 192.168.x.x)
     const ipRegex = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
     result = result.replace(ipRegex, (match) => {
       const parts = match.split('.');
@@ -217,99 +207,125 @@ export default function VaultDataStudio() {
     }
   };
 
-  const handleClear = () => {
-    setInputData('');
-    setErrorMsg(null);
-  };
-
-  const handleDownloadCsv = () => {
-    if (!csvResult) return;
-    const blob = new Blob([csvResult], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'export_data.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => setInputData(event.target.result);
+      reader.readAsText(file);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 font-sans antialiased flex flex-col">
-      {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div className="h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col overflow-hidden">
+      
+      {/* 1. Header (与支持/Star组件整合) */}
+      <header className="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur px-6 py-2.5 flex items-center justify-between shrink-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-[#38bdf8]">
-            <Lock size={18} />
+          <div className="h-7 w-7 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-[#38bdf8]">
+            <Lock size={15} />
           </div>
-          <span className="font-semibold text-lg tracking-tight text-white">
-            VaultData <span className="text-[#38bdf8]">Studio</span>
-          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="font-bold text-base tracking-tight text-white">
+              VaultData <span className="text-[#38bdf8]">Studio</span>
+            </span>
+            <span className="hidden sm:inline-block text-[11px] text-slate-500 font-mono">v1.2.0</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-medium">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          🔒 100% Private & Local
+        {/* 顶部中央卖点微提示 */}
+        <div className="hidden lg:flex items-center gap-6 text-xs text-slate-400">
+          <span className="flex items-center gap-1.5"><Shield size={13} className="text-emerald-400" /> 100% Client-Side Engine</span>
+          <span className="flex items-center gap-1.5"><Cpu size={13} className="text-sky-400" /> Zero Server Latency</span>
+          <span className="flex items-center gap-1.5"><RefreshCw size={13} className="text-purple-400" /> GDPR PII Compliant</span>
+        </div>
+
+        {/* 右侧外链/变现组合 */}
+        <div className="flex items-center gap-2">
+          <a
+            href="https://buymeacoffee.com"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-1 rounded-md transition font-medium"
+          >
+            <Coffee size={13} />
+            <span className="hidden sm:inline">Buy me a coffee</span>
+          </a>
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noreferrer"
+            className="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-slate-800 transition"
+            title="View Source on GitHub"
+          >
+            <Github size={16} />
+          </a>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 flex flex-col gap-6">
+      {/* 2. Main Workspace Container */}
+      <main className="flex-1 p-4 flex flex-col gap-3 min-h-0 max-w-[1800px] w-full mx-auto">
         
         {/* Navigation & Action Bar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-          <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-lg border border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 bg-slate-900/40 p-1.5 rounded-xl border border-slate-800/60">
+          
+          {/* Mode Selector Tabs */}
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
             <button
               onClick={() => setActiveTab('beautifier')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
                 activeTab === 'beautifier' 
-                  ? 'bg-slate-800 text-[#38bdf8] shadow-sm border border-slate-700/50' 
+                  ? 'bg-slate-800 text-[#38bdf8] shadow-sm border border-slate-700/60' 
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <FileText size={16} /> JSON Beautifier
+              <FileText size={14} /> JSON Beautifier
             </button>
             <button
               onClick={() => setActiveTab('converter')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
                 activeTab === 'converter' 
-                  ? 'bg-slate-800 text-[#38bdf8] shadow-sm border border-slate-700/50' 
+                  ? 'bg-slate-800 text-[#38bdf8] shadow-sm border border-slate-700/60' 
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <ArrowRightLeft size={16} /> JSON ↔ CSV
+              <ArrowRightLeft size={14} /> JSON ↔ CSV
             </button>
             <button
               onClick={() => setActiveTab('masker')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
                 activeTab === 'masker' 
-                  ? 'bg-slate-800 text-[#38bdf8] shadow-sm border border-slate-700/50' 
+                  ? 'bg-slate-800 text-emerald-400 shadow-sm border border-slate-700/60' 
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <ShieldCheck size={16} /> Smart PII Masker
+              <ShieldCheck size={14} />
+              <span>Smart PII Masker</span>
+              <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-mono">PRO</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          {/* Action Tools */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setInputData(sampleJson)}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-[#38bdf8] px-3 py-1.5 rounded bg-slate-800/40 hover:bg-slate-800 border border-slate-700/40 transition"
+              className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-[#38bdf8] px-3 py-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition"
             >
-              <Sparkles size={13} /> Load Sample
+              <Sparkles size={13} className="text-amber-400" />
+              <span>Load Sample</span>
             </button>
             <button
-              onClick={handleClear}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-rose-400 px-3 py-1.5 rounded bg-slate-800/40 hover:bg-slate-800 border border-slate-700/40 transition"
+              onClick={() => { setInputData(''); setErrorMsg(null); }}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-rose-400 px-3 py-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition"
             >
-              <Trash2 size={13} /> Clear
+              <Trash2 size={13} />
+              <span>Clear</span>
             </button>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 text-xs font-medium bg-[#38bdf8] hover:bg-sky-400 text-slate-950 px-3.5 py-1.5 rounded transition shadow-sm"
+              className="flex items-center gap-1.5 text-xs font-semibold bg-[#38bdf8] hover:bg-sky-400 text-slate-950 px-4 py-1.5 rounded-lg transition shadow-md shadow-sky-950/20"
             >
               {copied ? <Check size={13} /> : <Copy size={13} />}
               {copied ? 'Copied!' : 'Copy Result'}
@@ -317,39 +333,59 @@ export default function VaultDataStudio() {
           </div>
         </div>
 
-        {/* Workspace Panels */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-[500px]">
+        {/* Input/Output Split Workspace */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
           
-          {/* Input Panel */}
-          <div className="flex flex-col bg-slate-950/40 rounded-xl border border-slate-800/80 overflow-hidden">
-            <div className="bg-slate-900/60 px-4 py-2.5 border-b border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400">
-              <span>INPUT DATA</span>
-              <span>{inputData.length} chars</span>
+          {/* Left: Input Editor */}
+          <div 
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+            className={`flex flex-col bg-slate-900/50 rounded-xl border transition-all overflow-hidden ${
+              isDragging ? 'border-sky-400 bg-sky-950/20 ring-2 ring-sky-400/20' : 'border-slate-800/80 focus-within:border-slate-700'
+            }`}
+          >
+            <div className="bg-slate-900/80 px-4 py-2 border-b border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400 shrink-0">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-slate-500"></span> INPUT
+              </span>
+              <span>{inputData.length.toLocaleString()} chars</span>
             </div>
-            <textarea
-              value={inputData}
-              onChange={(e) => setInputData(e.target.value)}
-              placeholder="Paste raw JSON or string here..."
-              className="flex-1 w-full bg-transparent p-4 font-mono text-sm text-slate-200 placeholder-slate-600 focus:outline-none resize-none leading-relaxed"
-            />
+
+            <div className="relative flex-1 min-h-0">
+              <textarea
+                value={inputData}
+                onChange={(e) => setInputData(e.target.value)}
+                placeholder="Paste raw JSON or text here, or drag & drop a file..."
+                className="w-full h-full bg-transparent p-4 font-mono text-xs text-slate-200 placeholder-slate-600 focus:outline-none resize-none leading-relaxed"
+              />
+              {!inputData && (
+                <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center text-slate-600 gap-2">
+                  <UploadCloud size={28} className="opacity-40" />
+                  <span className="text-xs">Drag and drop a file, or paste raw data</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Output Panel */}
-          <div className="flex flex-col bg-slate-950/40 rounded-xl border border-slate-800/80 overflow-hidden">
-            <div className="bg-slate-900/60 px-4 py-2 border-b border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400">
-              <span>OUTPUT PREVIEW</span>
-              
+          {/* Right: Output Preview */}
+          <div className="flex flex-col bg-slate-900/50 rounded-xl border border-slate-800/80 overflow-hidden">
+            <div className="bg-slate-900/80 px-4 py-2 border-b border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400 shrink-0">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500"></span> PREVIEW
+              </span>
+
               {activeTab === 'beautifier' && formattedJson && (
-                <div className="flex items-center gap-1 bg-slate-900 p-0.5 rounded border border-slate-800">
+                <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded border border-slate-800">
                   <button
                     onClick={() => setViewMode('code')}
-                    className={`px-2 py-0.5 rounded ${viewMode === 'code' ? 'bg-slate-800 text-sky-400' : 'text-slate-500'}`}
+                    className={`px-2 py-0.5 rounded text-[11px] ${viewMode === 'code' ? 'bg-slate-800 text-sky-400 font-medium' : 'text-slate-500'}`}
                   >
                     Code
                   </button>
                   <button
                     onClick={() => setViewMode('tree')}
-                    className={`px-2 py-0.5 rounded ${viewMode === 'tree' ? 'bg-slate-800 text-sky-400' : 'text-slate-500'}`}
+                    className={`px-2 py-0.5 rounded text-[11px] ${viewMode === 'tree' ? 'bg-slate-800 text-sky-400 font-medium' : 'text-slate-500'}`}
                   >
                     Tree
                   </button>
@@ -358,24 +394,33 @@ export default function VaultDataStudio() {
 
               {activeTab === 'converter' && csvResult && (
                 <button
-                  onClick={handleDownloadCsv}
-                  className="flex items-center gap-1 text-sky-400 hover:underline"
+                  onClick={() => {
+                    const blob = new Blob([csvResult], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', 'export_data.csv');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="flex items-center gap-1 text-sky-400 hover:text-sky-300 text-xs transition"
                 >
                   <Download size={12} /> Download .CSV
                 </button>
               )}
             </div>
 
-            <div className="flex-1 p-4 overflow-auto font-mono text-sm">
+            <div className="flex-1 p-4 overflow-auto font-mono text-xs min-h-0">
               {errorMsg && (
-                <div className="text-rose-400 bg-rose-500/10 border border-rose-500/20 p-3 rounded text-xs">
-                  ⚠️ Error: {errorMsg}
+                <div className="text-rose-400 bg-rose-500/10 border border-rose-500/20 p-3 rounded-lg text-xs flex items-center gap-2">
+                  <span>⚠️ Syntax Error:</span> {errorMsg}
                 </div>
               )}
 
               {!errorMsg && !inputData && (
                 <div className="h-full flex items-center justify-center text-slate-600 text-xs">
-                  Enter data on the left to see live output...
+                  Output will update automatically...
                 </div>
               )}
 
@@ -399,8 +444,11 @@ export default function VaultDataStudio() {
         </div>
       </main>
 
-      <footer className="border-t border-slate-800/60 py-4 text-center text-xs text-slate-500">
-        VaultData Studio • 100% Client-Side Processing • No Server Requests
+      {/* 3. Bottom Status Bar */}
+      <footer className="border-t border-slate-800/80 bg-slate-900/60 px-6 py-2 text-center text-[11px] text-slate-500 flex items-center justify-between shrink-0 font-mono">
+        <span>VaultData Studio</span>
+        <span>Built for GDPR/CCPA Privacy Compliance</span>
+        <span>Client-Side Local V8 Engine</span>
       </footer>
     </div>
   );
