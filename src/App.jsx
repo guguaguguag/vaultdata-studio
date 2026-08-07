@@ -19,7 +19,7 @@ const JsonTreeNode = ({ data, keyName, isLast = true }) => {
     if (data === null) valueColor = 'text-rose-400';
 
     return (
-      <div className="pl-4 py-0.5 font-mono text-xs leading-relaxed hover:bg-slate-800/40 rounded transition-colors">
+      <div className="pl-4 py-0.5 font-mono text-xs leading-relaxed hover:bg-slate-800/40 rounded transition-colors break-all">
         {keyName && <span className="text-slate-400">"{keyName}": </span>}
         <span className={valueColor}>
           {typeof data === 'string' ? `"${data}"` : String(data)}
@@ -221,36 +221,36 @@ export default function VaultDataStudio() {
   };
 
   return (
-    <div className="h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col overflow-hidden">
+    <div className="min-h-screen lg:h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col overflow-x-hidden">
       
       {/* 1. Header */}
-      <header className="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur px-6 py-2.5 flex items-center justify-between shrink-0 z-50">
-        <div className="flex items-center gap-3">
+      <header className="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur px-4 lg:px-6 py-2.5 flex items-center justify-between shrink-0 z-50">
+        <div className="flex items-center gap-2 lg:gap-3">
           <div className="h-7 w-7 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-[#38bdf8]">
             <Lock size={15} />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="font-bold text-base tracking-tight text-white">
+            <span className="font-bold text-sm lg:text-base tracking-tight text-white">
               VaultData <span className="text-[#38bdf8]">Studio</span>
             </span>
-            <span className="hidden sm:inline-block text-[11px] text-slate-500 font-mono">v1.2.0</span>
           </div>
         </div>
 
-        {/* 核心卖点顶栏突出提醒 */}
+        {/* 顶部中央卖点微提示 */}
         <button 
           onClick={() => setShowInfoModal(true)}
-          className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500/60 text-emerald-300 px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer"
+          className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500/60 text-emerald-300 px-2.5 py-1 rounded-full text-[11px] lg:text-xs font-medium transition cursor-pointer"
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span>🔒 100% Client-Side Engine (Zero Server Uploads)</span>
-          <HelpCircle size={13} className="text-emerald-400 ml-1" />
+          <span className="hidden sm:inline">🔒 100% Client-Side Engine</span>
+          <span className="sm:hidden">🔒 Private</span>
+          <HelpCircle size={12} className="text-emerald-400" />
         </button>
 
-        {/* 右侧外链/变现组合 */}
+        {/* 右侧打赏入口 */}
         <div className="flex items-center gap-2">
           <a
             href="https://buymeacoffee.com"
@@ -266,7 +266,6 @@ export default function VaultDataStudio() {
             target="_blank"
             rel="noreferrer"
             className="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-slate-800 transition"
-            title="View Source on GitHub"
           >
             <Github size={16} />
           </a>
@@ -274,97 +273,87 @@ export default function VaultDataStudio() {
       </header>
 
       {/* 2. Main Workspace Container */}
-      <main className="flex-1 p-4 flex flex-col gap-3 min-h-0 max-w-[1800px] w-full mx-auto">
+      <main className="flex-1 p-3 lg:p-4 flex flex-col gap-3 min-h-0 max-w-[1800px] w-full mx-auto">
         
         {/* Navigation & Action Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 shrink-0 bg-slate-900/40 p-1.5 rounded-xl border border-slate-800/60">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0 bg-slate-900/40 p-1.5 rounded-xl border border-slate-800/60">
           
-          {/* Mode Selector Tabs */}
-          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+          {/* Tab 选项卡（手机端横向滚动，防止折行卡顿） */}
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('beautifier')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-all ${
                 activeTab === 'beautifier' 
                   ? 'bg-slate-800 text-[#38bdf8] shadow-sm border border-slate-700/60' 
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <FileText size={14} /> JSON Beautifier
+              <FileText size={13} /> Beautifier
             </button>
             <button
               onClick={() => setActiveTab('converter')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-all ${
                 activeTab === 'converter' 
                   ? 'bg-slate-800 text-[#38bdf8] shadow-sm border border-slate-700/60' 
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <ArrowRightLeft size={14} /> JSON ↔ CSV
+              <ArrowRightLeft size={13} /> JSON ↔ CSV
             </button>
             <button
               onClick={() => setActiveTab('masker')}
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-all ${
                 activeTab === 'masker' 
                   ? 'bg-slate-800 text-emerald-400 shadow-sm border border-slate-700/60' 
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <ShieldCheck size={14} />
-              <span>Smart PII Masker</span>
-              <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-mono">PRO</span>
+              <ShieldCheck size={13} />
+              <span>PII Masker</span>
             </button>
           </div>
 
-          {/* 三大卖点微型 Banner */}
-          <div className="hidden xl:flex items-center gap-4 text-xs text-slate-400 font-mono">
-            <span className="flex items-center gap-1"><Shield size={12} className="text-emerald-400" /> V8 Local Sandbox</span>
-            <span className="text-slate-700">•</span>
-            <span className="flex items-center gap-1"><Cpu size={12} className="text-sky-400" /> Zero Network Calls</span>
-            <span className="text-slate-700">•</span>
-            <span className="flex items-center gap-1"><RefreshCw size={12} className="text-purple-400" /> GDPR & PCI-DSS Compliant</span>
-          </div>
-
-          {/* Action Tools */}
-          <div className="flex items-center gap-2">
+          {/* 操作按钮 */}
+          <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => setInputData(sampleJson)}
-              className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-[#38bdf8] px-3 py-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1 text-xs text-slate-300 hover:text-[#38bdf8] px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 transition"
             >
-              <Sparkles size={13} className="text-amber-400" />
-              <span>Load Sample</span>
+              <Sparkles size={12} className="text-amber-400" />
+              <span>Sample</span>
             </button>
             <button
               onClick={() => { setInputData(''); setErrorMsg(null); }}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-rose-400 px-3 py-1.5 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition"
+              className="flex items-center justify-center gap-1 text-xs text-slate-400 hover:text-rose-400 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 transition"
             >
-              <Trash2 size={13} />
+              <Trash2 size={12} />
               <span>Clear</span>
             </button>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1.5 text-xs font-semibold bg-[#38bdf8] hover:bg-sky-400 text-slate-950 px-4 py-1.5 rounded-lg transition shadow-md shadow-sky-950/20"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1 text-xs font-semibold bg-[#38bdf8] hover:bg-sky-400 text-slate-950 px-3.5 py-1.5 rounded-lg transition shadow-md"
             >
-              {copied ? <Check size={13} /> : <Copy size={13} />}
-              {copied ? 'Copied!' : 'Copy Result'}
+              {copied ? <Check size={12} /> : <Copy size={12} />}
+              {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
         </div>
 
-        {/* Input/Output Split Workspace */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0">
+        {/* Input/Output Split Workspace（手机端垂直堆叠，电脑端两栏） */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
           
           {/* Left: Input Editor */}
           <div 
             onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
-            className={`flex flex-col bg-slate-900/50 rounded-xl border transition-all overflow-hidden ${
+            className={`flex flex-col bg-slate-900/50 rounded-xl border transition-all overflow-hidden h-64 lg:h-auto ${
               isDragging ? 'border-sky-400 bg-sky-950/20 ring-2 ring-sky-400/20' : 'border-slate-800/80 focus-within:border-slate-700'
             }`}
           >
-            <div className="bg-slate-900/80 px-4 py-2 border-b border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400 shrink-0">
+            <div className="bg-slate-900/80 px-3 py-1.5 border-b border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-400 shrink-0">
               <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-slate-500"></span> INPUT
+                <span className="h-1.5 w-1.5 rounded-full bg-slate-500"></span> INPUT
               </span>
               <span>{inputData.length.toLocaleString()} chars</span>
             </div>
@@ -373,36 +362,36 @@ export default function VaultDataStudio() {
               <textarea
                 value={inputData}
                 onChange={(e) => setInputData(e.target.value)}
-                placeholder="Paste raw JSON or text here, or drag & drop a file..."
-                className="w-full h-full bg-transparent p-4 font-mono text-xs text-slate-200 placeholder-slate-600 focus:outline-none resize-none leading-relaxed"
+                placeholder="Paste JSON or text here..."
+                className="w-full h-full bg-transparent p-3 font-mono text-xs text-slate-200 placeholder-slate-600 focus:outline-none resize-none leading-relaxed"
               />
               {!inputData && (
-                <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center text-slate-600 gap-2">
-                  <UploadCloud size={28} className="opacity-40" />
-                  <span className="text-xs">Drag and drop a file, or paste raw data</span>
+                <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center text-slate-600 gap-1.5 p-4 text-center">
+                  <UploadCloud size={24} className="opacity-40" />
+                  <span className="text-[11px]">Paste raw data or drop a file</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* Right: Output Preview */}
-          <div className="flex flex-col bg-slate-900/50 rounded-xl border border-slate-800/80 overflow-hidden">
-            <div className="bg-slate-900/80 px-4 py-2 border-b border-slate-800/80 flex items-center justify-between text-xs font-mono text-slate-400 shrink-0">
+          <div className="flex flex-col bg-slate-900/50 rounded-xl border border-slate-800/80 overflow-hidden h-64 lg:h-auto">
+            <div className="bg-slate-900/80 px-3 py-1.5 border-b border-slate-800/80 flex items-center justify-between text-[11px] font-mono text-slate-400 shrink-0">
               <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500"></span> PREVIEW
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> PREVIEW
               </span>
 
               {activeTab === 'beautifier' && formattedJson && (
-                <div className="flex items-center gap-1 bg-slate-950 p-0.5 rounded border border-slate-800">
+                <div className="flex items-center gap-0.5 bg-slate-950 p-0.5 rounded border border-slate-800">
                   <button
                     onClick={() => setViewMode('code')}
-                    className={`px-2 py-0.5 rounded text-[11px] ${viewMode === 'code' ? 'bg-slate-800 text-sky-400 font-medium' : 'text-slate-500'}`}
+                    className={`px-1.5 py-0.5 rounded text-[10px] ${viewMode === 'code' ? 'bg-slate-800 text-sky-400 font-medium' : 'text-slate-500'}`}
                   >
                     Code
                   </button>
                   <button
                     onClick={() => setViewMode('tree')}
-                    className={`px-2 py-0.5 rounded text-[11px] ${viewMode === 'tree' ? 'bg-slate-800 text-sky-400 font-medium' : 'text-slate-500'}`}
+                    className={`px-1.5 py-0.5 rounded text-[10px] ${viewMode === 'tree' ? 'bg-slate-800 text-sky-400 font-medium' : 'text-slate-500'}`}
                   >
                     Tree
                   </button>
@@ -421,88 +410,80 @@ export default function VaultDataStudio() {
                     link.click();
                     document.body.removeChild(link);
                   }}
-                  className="flex items-center gap-1 text-sky-400 hover:text-sky-300 text-xs transition"
+                  className="flex items-center gap-1 text-sky-400 text-[11px]"
                 >
-                  <Download size={12} /> Download .CSV
+                  <Download size={11} /> Export CSV
                 </button>
               )}
             </div>
 
-            <div className="flex-1 p-4 overflow-auto font-mono text-xs min-h-0">
+            <div className="flex-1 p-3 overflow-auto font-mono text-xs min-h-0">
               {errorMsg && (
-                <div className="text-rose-400 bg-rose-500/10 border border-rose-500/20 p-3 rounded-lg text-xs flex items-center gap-2">
-                  <span>⚠️ Syntax Error:</span> {errorMsg}
+                <div className="text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded text-[11px]">
+                  ⚠️ Error: {errorMsg}
                 </div>
               )}
 
               {!errorMsg && !inputData && (
-                <div className="h-full flex items-center justify-center text-slate-600 text-xs">
-                  Output will update automatically...
+                <div className="h-full flex items-center justify-center text-slate-600 text-[11px]">
+                  Output will appear here...
                 </div>
               )}
 
               {activeTab === 'beautifier' && !errorMsg && formattedJson && (
                 viewMode === 'code' ? (
-                  <pre className="text-sky-300/90 leading-relaxed whitespace-pre-wrap">{formattedJson}</pre>
+                  <pre className="text-sky-300/90 leading-relaxed whitespace-pre-wrap break-all">{formattedJson}</pre>
                 ) : (
                   <JsonTreeNode data={parsedJsonObject} />
                 )
               )}
 
               {activeTab === 'converter' && !errorMsg && (
-                <pre className="text-emerald-300/90 leading-relaxed whitespace-pre">{csvResult}</pre>
+                <pre className="text-emerald-300/90 leading-relaxed whitespace-pre overflow-x-auto">{csvResult}</pre>
               )}
 
               {activeTab === 'masker' && inputData && (
-                <pre className="text-slate-300 leading-relaxed whitespace-pre-wrap">{maskedResult}</pre>
+                <pre className="text-slate-300 leading-relaxed whitespace-pre-wrap break-all">{maskedResult}</pre>
               )}
             </div>
           </div>
         </div>
       </main>
 
-      {/* 3. Modal 对话框：展示完整三大卖点卡片 */}
+      {/* 3. Modal 弹窗 */}
       {showInfoModal && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-2xl w-full relative shadow-2xl">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 max-w-lg w-full relative shadow-2xl">
             <button 
               onClick={() => setShowInfoModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg"
             >
               <X size={18} />
             </button>
-            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-              🛡️ Why Choose VaultData Studio?
+            <h2 className="text-base font-bold text-white mb-3 flex items-center gap-2">
+              🛡️ Why VaultData Studio?
             </h2>
-            <div className="space-y-4 text-xs text-slate-300 leading-relaxed">
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80">
-                <h3 className="font-semibold text-sky-400 mb-1 flex items-center gap-1.5">
-                  <Shield size={14} /> 100% Client-Side Privacy
+            <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <h3 className="font-semibold text-sky-400 mb-1 flex items-center gap-1">
+                  <Shield size={13} /> 100% Client-Side Privacy
                 </h3>
-                <p className="text-slate-400">All processing happens inside your browser's local V8 JavaScript engine. Your raw data and sensitive API payloads are never sent to external servers.</p>
+                <p className="text-slate-400">All processing runs strictly in your local browser V8 engine. Zero server uploads.</p>
               </div>
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80">
-                <h3 className="font-semibold text-emerald-400 mb-1 flex items-center gap-1.5">
-                  <Cpu size={14} /> Automated Western PII Masking
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <h3 className="font-semibold text-emerald-400 mb-1 flex items-center gap-1">
+                  <Cpu size={13} /> Automated Western PII Masking
                 </h3>
-                <p className="text-slate-400">Instantly redact personally identifiable information (PII) including full names, emails, phone numbers, SSNs, and credit cards before feeding data to AI models like ChatGPT/Claude.</p>
-              </div>
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80">
-                <h3 className="font-semibold text-purple-400 mb-1 flex items-center gap-1.5">
-                  <RefreshCw size={14} /> Multi-Format Utility
-                </h3>
-                <p className="text-slate-400">Beautify raw JSON payloads, inspect interactive syntax trees, and export structured arrays to CSV spreadsheets seamlessly.</p>
+                <p className="text-slate-400">Instantly redact names, emails, phones, SSNs, and credit cards before sharing with AI prompts.</p>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 4. Bottom Status Bar */}
-      <footer className="border-t border-slate-800/80 bg-slate-900/60 px-6 py-2 text-center text-[11px] text-slate-500 flex items-center justify-between shrink-0 font-mono">
-        <span>VaultData Studio</span>
-        <span>Built for GDPR/CCPA Privacy Compliance</span>
-        <span>Client-Side Local V8 Engine</span>
+      {/* 4. Footer */}
+      <footer className="border-t border-slate-800/80 bg-slate-900/60 px-4 py-2 text-center text-[10px] text-slate-500 shrink-0 font-mono">
+        VaultData Studio • 100% Client-Side Local Engine
       </footer>
     </div>
   );
