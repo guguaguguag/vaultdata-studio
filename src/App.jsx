@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { 
   Lock, Copy, Trash2, FileText, ArrowRightLeft, 
   ShieldCheck, Check, Sparkles, ChevronDown, ChevronRight, 
-  Download, Github, Coffee, UploadCloud, Shield, Cpu, RefreshCw
+  Download, Github, Coffee, UploadCloud, Shield, Cpu, RefreshCw,
+  HelpCircle, X
 } from 'lucide-react';
 
 // --- Sub-component: JSON Tree View ---
@@ -81,6 +82,7 @@ export default function VaultDataStudio() {
   const [viewMode, setViewMode] = useState('code');
   const [errorMsg, setErrorMsg] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   // --- Sample JSON Data ---
   const sampleJson = JSON.stringify({
@@ -221,7 +223,7 @@ export default function VaultDataStudio() {
   return (
     <div className="h-screen bg-slate-950 text-slate-100 font-sans antialiased flex flex-col overflow-hidden">
       
-      {/* 1. Header (与支持/Star组件整合) */}
+      {/* 1. Header */}
       <header className="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur px-6 py-2.5 flex items-center justify-between shrink-0 z-50">
         <div className="flex items-center gap-3">
           <div className="h-7 w-7 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-[#38bdf8]">
@@ -235,12 +237,18 @@ export default function VaultDataStudio() {
           </div>
         </div>
 
-        {/* 顶部中央卖点微提示 */}
-        <div className="hidden lg:flex items-center gap-6 text-xs text-slate-400">
-          <span className="flex items-center gap-1.5"><Shield size={13} className="text-emerald-400" /> 100% Client-Side Engine</span>
-          <span className="flex items-center gap-1.5"><Cpu size={13} className="text-sky-400" /> Zero Server Latency</span>
-          <span className="flex items-center gap-1.5"><RefreshCw size={13} className="text-purple-400" /> GDPR PII Compliant</span>
-        </div>
+        {/* 核心卖点顶栏突出提醒 */}
+        <button 
+          onClick={() => setShowInfoModal(true)}
+          className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500/60 text-emerald-300 px-3 py-1 rounded-full text-xs font-medium transition cursor-pointer"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span>🔒 100% Client-Side Engine (Zero Server Uploads)</span>
+          <HelpCircle size={13} className="text-emerald-400 ml-1" />
+        </button>
 
         {/* 右侧外链/变现组合 */}
         <div className="flex items-center gap-2">
@@ -305,6 +313,15 @@ export default function VaultDataStudio() {
               <span>Smart PII Masker</span>
               <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-mono">PRO</span>
             </button>
+          </div>
+
+          {/* 三大卖点微型 Banner */}
+          <div className="hidden xl:flex items-center gap-4 text-xs text-slate-400 font-mono">
+            <span className="flex items-center gap-1"><Shield size={12} className="text-emerald-400" /> V8 Local Sandbox</span>
+            <span className="text-slate-700">•</span>
+            <span className="flex items-center gap-1"><Cpu size={12} className="text-sky-400" /> Zero Network Calls</span>
+            <span className="text-slate-700">•</span>
+            <span className="flex items-center gap-1"><RefreshCw size={12} className="text-purple-400" /> GDPR & PCI-DSS Compliant</span>
           </div>
 
           {/* Action Tools */}
@@ -444,7 +461,44 @@ export default function VaultDataStudio() {
         </div>
       </main>
 
-      {/* 3. Bottom Status Bar */}
+      {/* 3. Modal 对话框：展示完整三大卖点卡片 */}
+      {showInfoModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-2xl w-full relative shadow-2xl">
+            <button 
+              onClick={() => setShowInfoModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+            >
+              <X size={18} />
+            </button>
+            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              🛡️ Why Choose VaultData Studio?
+            </h2>
+            <div className="space-y-4 text-xs text-slate-300 leading-relaxed">
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80">
+                <h3 className="font-semibold text-sky-400 mb-1 flex items-center gap-1.5">
+                  <Shield size={14} /> 100% Client-Side Privacy
+                </h3>
+                <p className="text-slate-400">All processing happens inside your browser's local V8 JavaScript engine. Your raw data and sensitive API payloads are never sent to external servers.</p>
+              </div>
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80">
+                <h3 className="font-semibold text-emerald-400 mb-1 flex items-center gap-1.5">
+                  <Cpu size={14} /> Automated Western PII Masking
+                </h3>
+                <p className="text-slate-400">Instantly redact personally identifiable information (PII) including full names, emails, phone numbers, SSNs, and credit cards before feeding data to AI models like ChatGPT/Claude.</p>
+              </div>
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80">
+                <h3 className="font-semibold text-purple-400 mb-1 flex items-center gap-1.5">
+                  <RefreshCw size={14} /> Multi-Format Utility
+                </h3>
+                <p className="text-slate-400">Beautify raw JSON payloads, inspect interactive syntax trees, and export structured arrays to CSV spreadsheets seamlessly.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Bottom Status Bar */}
       <footer className="border-t border-slate-800/80 bg-slate-900/60 px-6 py-2 text-center text-[11px] text-slate-500 flex items-center justify-between shrink-0 font-mono">
         <span>VaultData Studio</span>
         <span>Built for GDPR/CCPA Privacy Compliance</span>
