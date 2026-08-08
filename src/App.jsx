@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  Lock, Copy, Trash2, FileText, ArrowRightLeft, 
+  Lock, Copy, Trash2, FileText, ArrowLeftRight, 
   ShieldCheck, Check, Sparkles, ChevronDown, ChevronRight, 
-  Download, Github, Coffee, UploadCloud, Shield, Cpu, RefreshCw,
+  Download, Github, Coffee, Upload, Shield, Cpu, RefreshCw,
   HelpCircle, X
 } from 'lucide-react';
 
@@ -336,7 +336,7 @@ export default function VaultDataStudio() {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <ArrowRightLeft size={13} /> JSON ↔ CSV
+              <ArrowLeftRight size={13} /> JSON ↔ CSV
             </button>
             <button
               onClick={() => setActiveTab('masker')}
@@ -405,7 +405,7 @@ export default function VaultDataStudio() {
 
               {!inputData && (
                 <label className="absolute inset-0 z-0 flex flex-col items-center justify-center text-slate-600 gap-2 p-4 text-center cursor-pointer hover:bg-slate-800/20 transition">
-                  <UploadCloud size={28} className={isDragging ? 'text-sky-400 animate-bounce' : 'opacity-40'} />
+                  <Upload size={28} className={isDragging ? 'text-sky-400 animate-bounce' : 'opacity-40'} />
                   <span className="text-xs text-slate-400">
                     {isDragging ? 'Drop file to open locally' : 'Drag file here to open locally (No server upload)'}
                   </span>
