@@ -78,7 +78,7 @@ export default function VaultDataStudio() {
   const [isDragging, setIsDragging] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
 
-  // --- Sample JSON Data tailored for US/EU Standard PII ---
+  // --- Sample JSON Data ---
   const sampleJson = JSON.stringify({
     session_id: "sess_99823a41b",
     user_profile: {
@@ -91,6 +91,10 @@ export default function VaultDataStudio() {
     billing: {
       credit_card: "4532-7182-9901-3411",
       billing_address: "100 Wilshire Blvd, Los Angeles, CA"
+    },
+    security: {
+      api_key: "sk_live_99a81bc77210984a",
+      password: "SuperSecretPassword123!"
     },
     permissions: ["admin", "auditor"],
     is_active: true
@@ -127,7 +131,6 @@ export default function VaultDataStudio() {
       const arr = Array.isArray(parsed) ? parsed : [parsed];
       if (arr.length === 0) return '';
 
-      // 递归展平（Flatten）嵌套对象与数组优化
       const flattenObject = (obj, prefix = '') => {
         return Object.keys(obj).reduce((acc, k) => {
           const pre = prefix.length ? prefix + '.' : '';
@@ -169,52 +172,102 @@ export default function VaultDataStudio() {
     }
   }, [inputData, activeTab]);
 
-  // --- Feature 3: Smart PII Masking ---
+  // --- Feature 3: Target-Based Smart PII Masking (方案 A) ---
   const maskedResult = useMemo(() => {
-    if (activeTab !== 'masker' || !inputData) return '';
+    if (activeTab !== 'masker' || !inputData.trim()) return '';
 
-    let result = inputData;
+    try {
+      const parsed = JSON.parse(inputData);
 
-    // 1. English Full Names
-    result = result.replace(/"(full_name|name|userName|realName|author|owner)"\s*:\s*"([A-Za-z]+(?:\s+[A-Za-z]+)+)"/g, (match, field, name) => {
-      const maskedName = name
-        .split(' ')
-        .map(part => part[0] + '*'.repeat(Math.max(1, part.length - 1)))
-        .join(' ');
-      return `"${field}": "${maskedName}"`;
-    });
+      // 定义需要精准脱敏的字段名规则（不区分大小写）
+      const piiKeys = {
+        name: /^(full_name|name|username|realname|author|owner|first_name|last_name)$/i,
+        email: /^(email|mail|user_email)$/i,
+        phone: /^(phone|mobile|tel|telephone|phone_number)$/i,
+        ssn: /^(ssn|id_card|identity_card|passport)$/i,
+        address: /^(address|billing_address|shipping_address|street|location)$/i,
+        card: /^(credit_card|card_num|card_number|cvv|bank_account)$/i,
+        ip: /^(ip|ip_address|client_ip|user_ip)$/i,
+        credential: /^(password|pass|passwd|secret|api_key|token|access_token|auth_token)$/i
+      };
 
-    // 2. Email Addresses
-    const emailRegex = /([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
-    result = result.replace(emailRegex, (match, p1, p2) => {
-      const maskedUser = p1.length > 2 ? p1.slice(0, 1) + '***' + p1.slice(-1) : '***';
-      return `${maskedUser}@${p2}`;
-    });
+      // 单个字符串值的掩码辅助函数
+      const maskValue = (key, val) => {
+        if (typeof val !== 'string') return val;
 
-    // 3. US Social Security Numbers (SSN)
-    const ssnRegex = /\b\d{3}-\d{2}-\d{4}\b/g;
-    result = result.replace(ssnRegex, (match) => '***-**-' + match.slice(-4));
+        // 1. 姓名 (如 Sarah Connor -> S**** C****)
+        if (piiKeys.name.test(key)) {
+          return val.split(' ').map(p => p.length > 1 ? p[0] + '*'.repeat(p.length - 1) : '*').join(' ');
+        }
+        // 2. 邮箱 (如 s.connor@cyberdyne.io -> s***r@cyberdyne.io)
+        if (piiKeys.email.test(key)) {
+          return val.replace(/([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/, (m, p1, p2) => {
+            return (p1.length > 2 ? p1[0] + '***' + p1.slice(-1) : '***') + '@' + p2;
+          });
+        }
+        // 3. 电话 (保留后 4 位)
+        if (piiKeys.phone.test(key)) {
+          return val.replace(/\d(?=\d{4})/g, '*');
+        }
+        // 4. SSN/身份证 (保留后 4 位)
+        if (piiKeys.ssn.test(key)) {
+          return val.length > 4 ? '*'.repeat(val.length - 4) + val.slice(-4) : '****';
+        }
+        // 5. 信用卡/银行卡
+        if (piiKeys.card.test(key)) {
+          const clean = val.replace(/\D/g, '');
+          return clean.length >= 4 ? '**** **** **** ' + clean.slice(-4) : '****';
+        }
+        // 6. IP 地址 (如 192.168.1.105 -> 192.168.x.x)
+        if (piiKeys.ip.test(key)) {
+          const parts = val.split('.');
+          return parts.length === 4 ? `${parts[0]}.${parts[1]}.x.x` : 'x.x.x.x';
+        }
+        // 7. 密码/Token/密钥 (直接全打码)
+        if (piiKeys.credential.test(key)) {
+          return '********';
+        }
+        // 8. 详细地址 (只保留前 3 个字符)
+        if (piiKeys.address.test(key)) {
+          return val.length > 6 ? val.slice(0, 3) + ' *** ****' : '***';
+        }
 
-    // 4. Phone Numbers
-    const phoneRegex = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
-    result = result.replace(phoneRegex, (match) => match.slice(0, -4).replace(/\d/g, '*') + match.slice(-4));
+        return val;
+      };
 
-    // 5. Credit Cards
-    const creditCardRegex = /\b(?:\d[ -]*?){13,16}\b/g;
-    result = result.replace(creditCardRegex, (match) => {
-      const clean = match.replace(/\D/g, '');
-      if (clean.length < 13) return match;
-      return '**** **** **** ' + clean.slice(-4);
-    });
+      // 递归遍历 JSON 对象/数组
+      const recursiveMask = (node) => {
+        if (Array.isArray(node)) {
+          return node.map(item => recursiveMask(item));
+        } else if (typeof node === 'object' && node !== null) {
+          const maskedObj = {};
+          for (const key of Object.keys(node)) {
+            const val = node[key];
+            // 判断此 key 是否符合脱敏条件
+            const isSensitive = Object.values(piiKeys).some(reg => reg.test(key));
 
-    // 6. IP Addresses
-    const ipRegex = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
-    result = result.replace(ipRegex, (match) => {
-      const parts = match.split('.');
-      return `${parts[0]}.${parts[1]}.x.x`;
-    });
+            if (isSensitive && typeof val === 'string') {
+              maskedObj[key] = maskValue(key, val);
+            } else if (typeof val === 'object' && val !== null) {
+              maskedObj[key] = recursiveMask(val);
+            } else {
+              maskedObj[key] = val; // 正常的数值（如 size, count, date, link 等）原封不动保留
+            }
+          }
+          return maskedObj;
+        }
+        return node;
+      };
 
-    return result;
+      const maskedJsonObj = recursiveMask(parsed);
+      return JSON.stringify(maskedJsonObj, null, 2);
+
+    } catch (e) {
+      // 如果不是合法 JSON，回退到严格的全局正则匹配（邮箱、标准电话、IP）
+      return inputData
+        .replace(/([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '***@$2')
+        .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, 'x.x.x.x');
+    }
   }, [inputData, activeTab]);
 
   // --- Handlers ---
@@ -457,7 +510,6 @@ export default function VaultDataStudio() {
               {activeTab === 'converter' && csvResult && (
                 <button
                   onClick={() => {
-                    // 关键修复：加入 '\uFEFF' UTF-8 BOM 头彻底解决 Excel 中文乱码问题
                     const blob = new Blob(['\uFEFF' + csvResult], { type: 'text/csv;charset=utf-8;' });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
