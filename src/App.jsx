@@ -78,6 +78,9 @@ export default function VaultDataStudio() {
   const [isDragging, setIsDragging] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
 
+  // 绑定的 Lemon Squeezy 真实赞助结算链接
+  const LEMON_SQUEEZY_URL = "https://vaultdata.lemonsqueezy.com/checkout/buy/aac70d77-1fa3-49a1-b4e4-60046e0984f7";
+
   // --- Sample JSON Data ---
   const sampleJson = JSON.stringify({
     session_id: "sess_99823a41b",
@@ -172,14 +175,13 @@ export default function VaultDataStudio() {
     }
   }, [inputData, activeTab]);
 
-  // --- Feature 3: Target-Based Smart PII Masking (方案 A) ---
+  // --- Feature 3: Target-Based Smart PII Masking ---
   const maskedResult = useMemo(() => {
     if (activeTab !== 'masker' || !inputData.trim()) return '';
 
     try {
       const parsed = JSON.parse(inputData);
 
-      // 定义需要精准脱敏的字段名规则（不区分大小写）
       const piiKeys = {
         name: /^(full_name|name|username|realname|author|owner|first_name|last_name)$/i,
         email: /^(email|mail|user_email)$/i,
@@ -191,43 +193,34 @@ export default function VaultDataStudio() {
         credential: /^(password|pass|passwd|secret|api_key|token|access_token|auth_token)$/i
       };
 
-      // 单个字符串值的掩码辅助函数
       const maskValue = (key, val) => {
         if (typeof val !== 'string') return val;
 
-        // 1. 姓名 (如 Sarah Connor -> S**** C****)
         if (piiKeys.name.test(key)) {
           return val.split(' ').map(p => p.length > 1 ? p[0] + '*'.repeat(p.length - 1) : '*').join(' ');
         }
-        // 2. 邮箱 (如 s.connor@cyberdyne.io -> s***r@cyberdyne.io)
         if (piiKeys.email.test(key)) {
           return val.replace(/([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/, (m, p1, p2) => {
             return (p1.length > 2 ? p1[0] + '***' + p1.slice(-1) : '***') + '@' + p2;
           });
         }
-        // 3. 电话 (保留后 4 位)
         if (piiKeys.phone.test(key)) {
           return val.replace(/\d(?=\d{4})/g, '*');
         }
-        // 4. SSN/身份证 (保留后 4 位)
         if (piiKeys.ssn.test(key)) {
           return val.length > 4 ? '*'.repeat(val.length - 4) + val.slice(-4) : '****';
         }
-        // 5. 信用卡/银行卡
         if (piiKeys.card.test(key)) {
           const clean = val.replace(/\D/g, '');
           return clean.length >= 4 ? '**** **** **** ' + clean.slice(-4) : '****';
         }
-        // 6. IP 地址 (如 192.168.1.105 -> 192.168.x.x)
         if (piiKeys.ip.test(key)) {
           const parts = val.split('.');
           return parts.length === 4 ? `${parts[0]}.${parts[1]}.x.x` : 'x.x.x.x';
         }
-        // 7. 密码/Token/密钥 (直接全打码)
         if (piiKeys.credential.test(key)) {
           return '********';
         }
-        // 8. 详细地址 (只保留前 3 个字符)
         if (piiKeys.address.test(key)) {
           return val.length > 6 ? val.slice(0, 3) + ' *** ****' : '***';
         }
@@ -235,7 +228,6 @@ export default function VaultDataStudio() {
         return val;
       };
 
-      // 递归遍历 JSON 对象/数组
       const recursiveMask = (node) => {
         if (Array.isArray(node)) {
           return node.map(item => recursiveMask(item));
@@ -243,7 +235,6 @@ export default function VaultDataStudio() {
           const maskedObj = {};
           for (const key of Object.keys(node)) {
             const val = node[key];
-            // 判断此 key 是否符合脱敏条件
             const isSensitive = Object.values(piiKeys).some(reg => reg.test(key));
 
             if (isSensitive && typeof val === 'string') {
@@ -251,7 +242,7 @@ export default function VaultDataStudio() {
             } else if (typeof val === 'object' && val !== null) {
               maskedObj[key] = recursiveMask(val);
             } else {
-              maskedObj[key] = val; // 正常的数值（如 size, count, date, link 等）原封不动保留
+              maskedObj[key] = val;
             }
           }
           return maskedObj;
@@ -263,7 +254,6 @@ export default function VaultDataStudio() {
       return JSON.stringify(maskedJsonObj, null, 2);
 
     } catch (e) {
-      // 如果不是合法 JSON，回退到严格的全局正则匹配（邮箱、标准电话、IP）
       return inputData
         .replace(/([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '***@$2')
         .replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, 'x.x.x.x');
@@ -358,14 +348,15 @@ export default function VaultDataStudio() {
         </button>
 
         <div className="flex items-center gap-2">
+          {/* Lemon Squeezy 赞助按钮 */}
           <a
-            href="https://buymeacoffee.com"
+            href={LEMON_SQUEEZY_URL}
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-1 rounded-md transition font-medium"
           >
             <span>☕</span>
-            <span className="hidden sm:inline">Buy me a coffee</span>
+            <span className="hidden sm:inline">Support Project</span>
           </a>
           <a
             href="https://github.com"
