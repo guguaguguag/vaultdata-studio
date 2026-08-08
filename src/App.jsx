@@ -96,7 +96,7 @@ export default function VaultDataStudio() {
     is_active: true
   }, null, 2);
 
-  // --- Logic Processing ---
+  // --- Feature 1: JSON Formatting ---
   const formattedJson = useMemo(() => {
     if (!inputData.trim()) {
       setErrorMsg(null);
@@ -119,6 +119,7 @@ export default function VaultDataStudio() {
     return null;
   }, [inputData, formattedJson, activeTab]);
 
+  // --- Feature 2: JSON to CSV Conversion (With Nested Objects Flattening) ---
   const csvResult = useMemo(() => {
     if (activeTab !== 'converter' || !inputData.trim()) return '';
     try {
@@ -126,16 +127,36 @@ export default function VaultDataStudio() {
       const arr = Array.isArray(parsed) ? parsed : [parsed];
       if (arr.length === 0) return '';
 
-      const headers = Array.from(new Set(arr.flatMap(obj => typeof obj === 'object' && obj ? Object.keys(obj) : [])));
+      // 递归展平（Flatten）嵌套对象的函数
+      const flattenObject = (obj, prefix = '') => {
+        return Object.keys(obj).reduce((acc, k) => {
+          const pre = prefix.length ? prefix + '.' : '';
+          if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
+            Object.assign(acc, flattenObject(obj[k], pre + k));
+          } else if (Array.isArray(obj[k])) {
+            acc[pre + k] = JSON.stringify(obj[k]);
+          } else {
+            acc[pre + k] = obj[k];
+          }
+          return acc;
+        }, {});
+      };
+
+      const flattenedArr = arr.map(item => typeof item === 'object' && item !== null ? flattenObject(item) : { value: item });
+
+      // 获取所有展平后的完整 Headers
+      const headers = Array.from(new Set(flattenedArr.flatMap(obj => Object.keys(obj))));
       if (headers.length === 0) return 'Invalid JSON structure for CSV conversion';
 
       const csvRows = [];
-      csvRows.push(headers.join(','));
+      // 表头行
+      csvRows.push(headers.map(h => `"${h}"`).join(','));
 
-      for (const row of arr) {
+      // 数据行
+      for (const row of flattenedArr) {
         const values = headers.map(header => {
           const val = row[header];
-          const escaped = ('' + (val ?? '')).replace(/"/g, '\\"');
+          const escaped = ('' + (val ?? '')).replace(/"/g, '""'); // CSV 标准双引号转义
           return `"${escaped}"`;
         });
         csvRows.push(values.join(','));
@@ -148,6 +169,7 @@ export default function VaultDataStudio() {
     }
   }, [inputData, activeTab]);
 
+  // --- Feature 3: Smart PII Masking ---
   const maskedResult = useMemo(() => {
     if (activeTab !== 'masker' || !inputData) return '';
 
