@@ -1,10 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Lock, Copy, Trash2, FileText, ArrowLeftRight, 
-  ShieldCheck, Check, Sparkles, ChevronDown, ChevronRight, 
-  Download, Github, Coffee, Upload, Shield, Cpu, RefreshCw,
-  HelpCircle, X
-} from 'lucide-react';
 
 // --- Sub-component: JSON Tree View ---
 const JsonTreeNode = ({ data, keyName, isLast = true }) => {
@@ -40,7 +34,7 @@ const JsonTreeNode = ({ data, keyName, isLast = true }) => {
       >
         {!isEmpty && (
           <span className="text-slate-500 hover:text-slate-300">
-            {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {isOpen ? '▼' : '▶'}
           </span>
         )}
         {keyName && <span className="text-slate-400">"{keyName}": </span>}
@@ -265,8 +259,8 @@ export default function VaultDataStudio() {
       {/* 1. Header */}
       <header className="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur px-4 lg:px-6 py-2.5 flex items-center justify-between shrink-0 z-50">
         <div className="flex items-center gap-2 lg:gap-3">
-          <div className="h-7 w-7 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-[#38bdf8]">
-            <Lock size={15} />
+          <div className="h-7 w-7 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-[#38bdf8] font-bold text-xs">
+            🔒
           </div>
           <div className="flex items-baseline gap-2">
             <span className="font-bold text-sm lg:text-base tracking-tight text-white">
@@ -286,7 +280,7 @@ export default function VaultDataStudio() {
           </span>
           <span className="hidden sm:inline">🔒 Zero Data Leakage Guarantee</span>
           <span className="sm:hidden">🔒 Zero Leakage</span>
-          <HelpCircle size={12} className="text-emerald-400" />
+          <span className="text-xs">❓</span>
         </button>
 
         {/* 右侧外链/变现 */}
@@ -297,16 +291,16 @@ export default function VaultDataStudio() {
             rel="noreferrer"
             className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-1 rounded-md transition font-medium"
           >
-            <Coffee size={13} />
+            <span>☕</span>
             <span className="hidden sm:inline">Buy me a coffee</span>
           </a>
           <a
             href="https://github.com"
             target="_blank"
             rel="noreferrer"
-            className="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-slate-800 transition"
+            className="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-slate-800 transition font-bold text-xs"
           >
-            <Github size={16} />
+            GitHub
           </a>
         </div>
       </header>
@@ -326,7 +320,7 @@ export default function VaultDataStudio() {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <FileText size={13} /> Beautifier
+              📄 Beautifier
             </button>
             <button
               onClick={() => setActiveTab('converter')}
@@ -336,7 +330,7 @@ export default function VaultDataStudio() {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <ArrowLeftRight size={13} /> JSON ↔ CSV
+              🔄 JSON ↔ CSV
             </button>
             <button
               onClick={() => setActiveTab('masker')}
@@ -346,8 +340,7 @@ export default function VaultDataStudio() {
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              <ShieldCheck size={13} />
-              <span>PII Masker</span>
+              🛡️ PII Masker
             </button>
           </div>
 
@@ -356,22 +349,19 @@ export default function VaultDataStudio() {
               onClick={() => setInputData(sampleJson)}
               className="flex-1 sm:flex-initial flex items-center justify-center gap-1 text-xs text-slate-300 hover:text-[#38bdf8] px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 transition"
             >
-              <Sparkles size={12} className="text-amber-400" />
-              <span>Sample</span>
+              ✨ Sample
             </button>
             <button
               onClick={() => { setInputData(''); setErrorMsg(null); }}
               className="flex items-center justify-center gap-1 text-xs text-slate-400 hover:text-rose-400 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50 transition"
             >
-              <Trash2 size={12} />
-              <span>Clear</span>
+              🗑️ Clear
             </button>
             <button
               onClick={handleCopy}
               className="flex-1 sm:flex-initial flex items-center justify-center gap-1 text-xs font-semibold bg-[#38bdf8] hover:bg-sky-400 text-slate-950 px-3.5 py-1.5 rounded-lg transition shadow-md"
             >
-              {copied ? <Check size={12} /> : <Copy size={12} />}
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? '✓ Copied' : '📋 Copy'}
             </button>
           </div>
         </div>
@@ -390,7 +380,7 @@ export default function VaultDataStudio() {
           >
             <div className="bg-slate-900/80 px-3 py-1.5 border-b border-slate-800/80 flex items-center justify-between text-[11px] font-mono shrink-0">
               <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
-                <Shield size={11} /> DATA STAYS LOCAL
+                🛡️ DATA STAYS LOCAL
               </span>
               <span className="text-slate-400">{inputData.length.toLocaleString()} chars</span>
             </div>
@@ -405,7 +395,7 @@ export default function VaultDataStudio() {
 
               {!inputData && (
                 <label className="absolute inset-0 z-0 flex flex-col items-center justify-center text-slate-600 gap-2 p-4 text-center cursor-pointer hover:bg-slate-800/20 transition">
-                  <Upload size={28} className={isDragging ? 'text-sky-400 animate-bounce' : 'opacity-40'} />
+                  <span className="text-2xl opacity-50">📁</span>
                   <span className="text-xs text-slate-400">
                     {isDragging ? 'Drop file to open locally' : 'Drag file here to open locally (No server upload)'}
                   </span>
@@ -458,7 +448,7 @@ export default function VaultDataStudio() {
                   }}
                   className="flex items-center gap-1 text-sky-400 text-[11px]"
                 >
-                  <Download size={11} /> Export CSV
+                  📥 Export CSV
                 </button>
               )}
             </div>
@@ -504,7 +494,7 @@ export default function VaultDataStudio() {
               onClick={() => setShowInfoModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg"
             >
-              <X size={18} />
+              ✕
             </button>
             <h2 className="text-base font-bold text-white mb-3 flex items-center gap-2">
               🛡️ Zero Data Leakage Guarantee
@@ -512,13 +502,13 @@ export default function VaultDataStudio() {
             <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
               <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
                 <h3 className="font-semibold text-sky-400 mb-1 flex items-center gap-1">
-                  <Lock size={13} /> Your file never leaves your browser
+                  🔒 Your file never leaves your browser
                 </h3>
                 <p className="text-slate-400">We have no backend server. We cannot leak what we do not have access to. Your data remains in your computer's RAM/memory only.</p>
               </div>
               <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
                 <h3 className="font-semibold text-emerald-400 mb-1 flex items-center gap-1">
-                  <Shield size={13} /> 100% Offline Processing
+                  ⚡ 100% Offline Processing
                 </h3>
                 <p className="text-slate-400">You can turn off your Wi-Fi after loading this page. All formatting and masking happens inside this browser window.</p>
               </div>
