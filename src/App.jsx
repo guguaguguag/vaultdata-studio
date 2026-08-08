@@ -119,7 +119,7 @@ export default function VaultDataStudio() {
     return null;
   }, [inputData, formattedJson, activeTab]);
 
-  // --- Feature 2: JSON to CSV Conversion (Optimized Flattening & Array Handling) ---
+  // --- Feature 2: JSON to CSV Conversion ---
   const csvResult = useMemo(() => {
     if (activeTab !== 'converter' || !inputData.trim()) return '';
     try {
@@ -134,10 +134,8 @@ export default function VaultDataStudio() {
           const val = obj[k];
 
           if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
-            // 嵌套对象继续展平
             Object.assign(acc, flattenObject(val, pre + k));
           } else if (Array.isArray(val)) {
-            // 如果是纯基础类型的数组（字符串/数字），用分号分隔；复杂的则转 JSON 文本
             const isPrimitiveArray = val.every(item => typeof item !== 'object' || item === null);
             acc[pre + k] = isPrimitiveArray ? val.join('; ') : JSON.stringify(val);
           } else {
@@ -149,19 +147,16 @@ export default function VaultDataStudio() {
 
       const flattenedArr = arr.map(item => typeof item === 'object' && item !== null ? flattenObject(item) : { value: item });
 
-      // 获取所有展平后的完整 Headers
       const headers = Array.from(new Set(flattenedArr.flatMap(obj => Object.keys(obj))));
       if (headers.length === 0) return 'Invalid JSON structure for CSV conversion';
 
       const csvRows = [];
-      // 表头行
       csvRows.push(headers.map(h => `"${h}"`).join(','));
 
-      // 数据行
       for (const row of flattenedArr) {
         const values = headers.map(header => {
           const val = row[header];
-          const escaped = ('' + (val ?? '')).replace(/"/g, '""'); // 标准 CSV 转义
+          const escaped = ('' + (val ?? '')).replace(/"/g, '""');
           return `"${escaped}"`;
         });
         csvRows.push(values.join(','));
@@ -200,11 +195,11 @@ export default function VaultDataStudio() {
     const ssnRegex = /\b\d{3}-\d{2}-\d{4}\b/g;
     result = result.replace(ssnRegex, (match) => '***-**-' + match.slice(-4));
 
-    // 4. Phone Numbers (US/EU Formats)
+    // 4. Phone Numbers
     const phoneRegex = /(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
     result = result.replace(phoneRegex, (match) => match.slice(0, -4).replace(/\d/g, '*') + match.slice(-4));
 
-    // 5. Credit Cards (PCI-DSS Standard)
+    // 5. Credit Cards
     const creditCardRegex = /\b(?:\d[ -]*?){13,16}\b/g;
     result = result.replace(creditCardRegex, (match) => {
       const clean = match.replace(/\D/g, '');
@@ -296,7 +291,6 @@ export default function VaultDataStudio() {
           </div>
         </div>
 
-        {/* 顶部中央卖点微提示 */}
         <button 
           onClick={() => setShowInfoModal(true)}
           className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500/60 text-emerald-300 px-2.5 py-1 rounded-full text-[11px] lg:text-xs font-medium transition cursor-pointer"
@@ -310,7 +304,6 @@ export default function VaultDataStudio() {
           <span className="text-xs">❓</span>
         </button>
 
-        {/* 右侧外链/变现 */}
         <div className="flex items-center gap-2">
           <a
             href="https://buymeacoffee.com"
@@ -464,7 +457,8 @@ export default function VaultDataStudio() {
               {activeTab === 'converter' && csvResult && (
                 <button
                   onClick={() => {
-                    const blob = new Blob([csvResult], { type: 'text/csv;charset=utf-8;' });
+                    // 关键修复：加入 '\uFEFF' UTF-8 BOM 头彻底解决 Excel 中文乱码问题
+                    const blob = new Blob(['\uFEFF' + csvResult], { type: 'text/csv;charset=utf-8;' });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
@@ -473,7 +467,7 @@ export default function VaultDataStudio() {
                     link.click();
                     document.body.removeChild(link);
                   }}
-                  className="flex items-center gap-1 text-sky-400 text-[11px]"
+                  className="flex items-center gap-1 text-sky-400 text-[11px] hover:text-sky-300 transition"
                 >
                   📥 Export CSV
                 </button>
