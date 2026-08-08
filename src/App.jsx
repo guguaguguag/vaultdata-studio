@@ -119,7 +119,7 @@ export default function VaultDataStudio() {
     return null;
   }, [inputData, formattedJson, activeTab]);
 
-  // --- Feature 2: JSON to CSV Conversion (With Nested Objects Flattening) ---
+  // --- Feature 2: JSON to CSV Conversion (Optimized Flattening & Array Handling) ---
   const csvResult = useMemo(() => {
     if (activeTab !== 'converter' || !inputData.trim()) return '';
     try {
@@ -127,16 +127,21 @@ export default function VaultDataStudio() {
       const arr = Array.isArray(parsed) ? parsed : [parsed];
       if (arr.length === 0) return '';
 
-      // 递归展平（Flatten）嵌套对象的函数
+      // 递归展平（Flatten）嵌套对象与数组优化
       const flattenObject = (obj, prefix = '') => {
         return Object.keys(obj).reduce((acc, k) => {
           const pre = prefix.length ? prefix + '.' : '';
-          if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
-            Object.assign(acc, flattenObject(obj[k], pre + k));
-          } else if (Array.isArray(obj[k])) {
-            acc[pre + k] = JSON.stringify(obj[k]);
+          const val = obj[k];
+
+          if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+            // 嵌套对象继续展平
+            Object.assign(acc, flattenObject(val, pre + k));
+          } else if (Array.isArray(val)) {
+            // 如果是纯基础类型的数组（字符串/数字），用分号分隔；复杂的则转 JSON 文本
+            const isPrimitiveArray = val.every(item => typeof item !== 'object' || item === null);
+            acc[pre + k] = isPrimitiveArray ? val.join('; ') : JSON.stringify(val);
           } else {
-            acc[pre + k] = obj[k];
+            acc[pre + k] = val;
           }
           return acc;
         }, {});
@@ -156,7 +161,7 @@ export default function VaultDataStudio() {
       for (const row of flattenedArr) {
         const values = headers.map(header => {
           const val = row[header];
-          const escaped = ('' + (val ?? '')).replace(/"/g, '""'); // CSV 标准双引号转义
+          const escaped = ('' + (val ?? '')).replace(/"/g, '""'); // 标准 CSV 转义
           return `"${escaped}"`;
         });
         csvRows.push(values.join(','));
